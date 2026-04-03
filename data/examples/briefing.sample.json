@@ -1,0 +1,41 @@
+{
+  "project_id": "local-demo-001",
+  "presentation": {
+    "title": "Compilador de Apresentacoes com IA",
+    "goal": "Convencer que vale construir um sistema proprio para gerar apresentacoes profissionais",
+    "audience": "executive",
+    "tone": "premium",
+    "language": "pt-BR",
+    "duration_minutes": 12
+  },
+  "briefing": {
+    "script": "Quero mostrar o problema das apresentacoes genericas, explicar uma arquitetura eficiente, delimitar um MVP viavel e concluir com os proximos passos para construcao.",
+    "design_direction": "editorial, sofisticado, claro, high-end",
+    "must_include": [
+      "problema",
+      "arquitetura",
+      "MVP",
+      "proximos passos"
+    ],
+    "must_avoid": [
+      "visual generico",
+      "bullets demais",
+      "slides sem hierarquia"
+    ]
+  },
+  "brand_kit": {
+    "brand_name": "AutomacaoSlides",
+    "logo_path": "",
+    "colors": [
+      "#171717",
+      "#F4EFE6",
+      "#C96F3B"
+    ],
+    "fonts": {
+      "headline": "Aptos Display",
+      "body": "Aptos"
+    }
+  },
+  "data_sources": [],
+  "assets": []
+}

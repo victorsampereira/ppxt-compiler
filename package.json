@@ -1,0 +1,22 @@
+{
+  "name": "automacao-slides",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pipeline local para gerar apresentacoes PPTX de alta qualidade a partir de briefing estruturado.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "generate:sample": "node --loader ts-node/esm src/index.ts data/examples/briefing.sample.json",
+    "start": "node --loader ts-node/esm src/index.ts"
+  },
+  "dependencies": {
+    "pptxgenjs": "^3.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
+

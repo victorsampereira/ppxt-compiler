@@ -47,6 +47,52 @@ Gerar apresentacoes realmente profissionais, com consistencia visual, narrativa 
 - armazenamento local no MVP
 - possivel uso de LibreOffice ou PowerPoint para render de preview
 
+## Como executar
+
+Instalacao:
+
+```bash
+npm install
+```
+
+Gerar a apresentacao de exemplo:
+
+```bash
+npm run generate:sample
+```
+
+Validar tipagem:
+
+```bash
+npm run typecheck
+```
+
+## Saidas do pipeline
+
+Ao executar o gerador, o projeto grava em `output/generated/<project_id>/`:
+
+- arquivo `.pptx`
+- `artifacts.json` com todos os artefatos intermediarios
+- `quality-report.json` com score e alertas por slide
+
+## Estado atual do MVP
+
+Ja implementado:
+
+- leitura e validacao do briefing em JSON
+- normalizacao do contexto
+- planejamento narrativo inicial
+- escrita deterministica de slides
+- resolucao basica de design
+- renderizacao de `.pptx`
+- QA inicial por regras objetivas
+
+Proximo passo recomendado:
+
+- integrar OpenAI API no planner, writer e critic
+- expandir biblioteca de archetypes
+- melhorar layout engine para composicao menos rigida
+
 ## Status esperado do MVP
 
 O MVP deve:
