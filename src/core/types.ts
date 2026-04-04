@@ -143,6 +143,13 @@ export interface QualityReport {
   slideResults: SlideQualityResult[];
 }
 
+export interface PromptTrace {
+  promptId: string;
+  version: string;
+  model: string;
+  usedAi: boolean;
+}
+
 export interface PipelineArtifacts {
   input: PresentationInput;
   normalizedBrief: NormalizedBrief;
@@ -151,5 +158,6 @@ export interface PipelineArtifacts {
   designedSlides: DesignedSlide[];
   layouts: SlideLayout[];
   qualityReport: QualityReport;
+  promptTraces: PromptTrace[];
+  generationMode: "deterministic" | "hybrid-ai";
 }
-

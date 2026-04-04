@@ -61,6 +61,14 @@ Gerar a apresentacao de exemplo:
 npm run generate:sample
 ```
 
+Ativar o modo com OpenAI API:
+
+```bash
+copy .env.example .env
+```
+
+Defina `OPENAI_API_KEY` e, se quiser, ajuste `OPENAI_MODEL`.
+
 Validar tipagem:
 
 ```bash
@@ -81,11 +89,13 @@ Ja implementado:
 
 - leitura e validacao do briefing em JSON
 - normalizacao do contexto
-- planejamento narrativo inicial
-- escrita deterministica de slides
+- planejamento narrativo com fallback deterministico
+- escrita de slides com fallback deterministico
 - resolucao basica de design
 - renderizacao de `.pptx`
 - QA inicial por regras objetivas
+- integracao opcional com OpenAI Responses API
+- rastreio de prompts usados no manifesto
 
 Proximo passo recomendado:
 

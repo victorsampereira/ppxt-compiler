@@ -1,12 +1,11 @@
 import path from "node:path";
 
-import { createPresentationPlan } from "../core/plan.js";
-import { writeSlides } from "../core/author.js";
+import { runAiAwareContentPipeline } from "../ai/pipeline-ai.js";
 import { resolveDesignPlan } from "../core/design.js";
 import { readJson, writeJson } from "../core/fs.js";
 import { buildLayouts } from "../core/layout.js";
 import { normalizeBrief } from "../core/normalize.js";
-import { evaluateSlides } from "../core/qa.js";
+import { buildQualityReport } from "../core/qa.js";
 import { renderPresentation } from "../core/render.js";
 import { PipelineArtifacts, PresentationInput } from "../core/types.js";
 import { validatePresentationInput } from "../core/validation.js";
@@ -30,11 +29,12 @@ export async function runPresentationPipeline({
   const input = validatePresentationInput(rawInput);
 
   const normalizedBrief = normalizeBrief(input);
-  const plan = createPresentationPlan(normalizedBrief);
-  const slideContents = writeSlides(normalizedBrief, plan);
+  const aiResult = await runAiAwareContentPipeline(normalizedBrief);
+  const plan = aiResult.plan;
+  const slideContents = aiResult.slideContents;
   const designedSlides = resolveDesignPlan(plan, normalizedBrief.brandKit.colors);
   const layouts = buildLayouts(slideContents, designedSlides);
-  const qualityReport = evaluateSlides(slideContents);
+  const qualityReport = buildQualityReport(aiResult.qualityResults);
 
   const artifacts: PipelineArtifacts = {
     input,
@@ -44,6 +44,8 @@ export async function runPresentationPipeline({
     designedSlides,
     layouts,
     qualityReport,
+    promptTraces: aiResult.promptTraces,
+    generationMode: aiResult.generationMode,
   };
 
   const projectDir = path.join(outputDir, normalizedBrief.projectId);
@@ -67,4 +69,3 @@ export async function runPresentationPipeline({
     qualityReportPath,
   };
 }
-

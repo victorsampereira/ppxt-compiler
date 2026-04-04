@@ -41,6 +41,12 @@ function scoreSlide(content: SlideContent): SlideQualityResult {
 
 export function evaluateSlides(contents: SlideContent[]): QualityReport {
   const slideResults = contents.map(scoreSlide);
+  return buildQualityReport(slideResults);
+}
+
+export function buildQualityReport(
+  slideResults: SlideQualityResult[],
+): QualityReport {
   const totalScore = slideResults.reduce((sum, item) => sum + item.score, 0);
 
   return {
@@ -49,4 +55,3 @@ export function evaluateSlides(contents: SlideContent[]): QualityReport {
     slideResults,
   };
 }
-
