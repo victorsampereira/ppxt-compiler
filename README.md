@@ -61,13 +61,32 @@ Gerar a apresentacao de exemplo:
 npm run generate:sample
 ```
 
-Ativar o modo com OpenAI API:
+Ativar o modo com OpenAI API no macOS/Linux:
 
 ```bash
-copy .env.example .env
+cp .env.example .env
 ```
 
-Defina `OPENAI_API_KEY` e, se quiser, ajuste `OPENAI_MODEL`.
+Defina `OPENAI_API_KEY` no arquivo e, se quiser, ajuste `OPENAI_MODEL`.
+O aplicativo lê as variáveis do processo; criar `.env` sozinho não as carrega.
+Antes de executar, exporte os valores no mesmo terminal:
+
+```bash
+set -a
+. ./.env
+set +a
+npm run generate:sample
+```
+
+No PowerShell, defina as variáveis diretamente antes de executar:
+
+```powershell
+$env:OPENAI_API_KEY = "sua-chave"
+$env:OPENAI_MODEL = "gpt-5-mini"
+npm run generate:sample
+```
+
+Sem `OPENAI_API_KEY`, o pipeline usa o fallback determinístico.
 
 Validar tipagem:
 
