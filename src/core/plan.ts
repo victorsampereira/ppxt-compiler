@@ -6,7 +6,11 @@ import {
   SlidePurpose,
 } from "./types.js";
 
-function inferArchetype(index: number, purpose: SlidePurpose): SlideArchetype {
+function inferArchetype(
+  index: number,
+  purpose: SlidePurpose,
+  topic: string,
+): SlideArchetype {
   if (purpose === "title") {
     return "hero_statement";
   }
@@ -16,7 +20,7 @@ function inferArchetype(index: number, purpose: SlidePurpose): SlideArchetype {
   }
 
   if (purpose === "section") {
-    return "section_break";
+    return topic.toLowerCase().includes("agenda") ? "agenda" : "section_break";
   }
 
   if (purpose === "comparison") {
@@ -83,12 +87,13 @@ export function createPresentationPlan(
       slideId: `s${String(index + 1).padStart(2, "0")}`,
       section: index < 2 ? "opening" : index === topics.length - 1 ? "closing" : "body",
       purpose,
+      topic,
       keyMessage: buildKeyMessage(topic, brief),
       speakerIntent:
         purpose === "closing"
           ? "encerrar com decisao clara e proximo passo"
           : `explicar ${topic.toLowerCase()} com foco em clareza executiva`,
-      recommendedArchetype: inferArchetype(index, purpose),
+      recommendedArchetype: inferArchetype(index, purpose, topic),
     };
   });
 
@@ -100,4 +105,3 @@ export function createPresentationPlan(
     slides,
   };
 }
-

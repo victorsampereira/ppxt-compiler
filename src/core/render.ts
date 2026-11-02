@@ -1,14 +1,19 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 
+import { normalizeHex } from "./color.js";
 import { ensureDir } from "./fs.js";
+import { BULLET_SPACING, textFor } from "./layout.js";
+import { ruleColor, slideBackground, textColor } from "./style.js";
+import { ThemeTokens, buildThemeTokens } from "./theme.js";
 import {
   DesignedSlide,
+  LayoutElement,
   NormalizedBrief,
   PresentationPlan,
   SlideContent,
+  SlideLayout,
 } from "./types.js";
-import { ThemeTokens, buildThemeTokens } from "./theme.js";
 
 const require = createRequire(import.meta.url);
 const PptxGenJS = require("pptxgenjs") as new () => {
@@ -27,6 +32,7 @@ type PptxSlide = {
   background: { color: string };
   addText: (text: unknown, options?: Record<string, unknown>) => void;
   addShape: (shapeName: string, options?: Record<string, unknown>) => void;
+  addNotes: (notes: string) => void;
 };
 
 interface RenderOptions {
@@ -34,140 +40,87 @@ interface RenderOptions {
   plan: PresentationPlan;
   contents: SlideContent[];
   designedSlides: DesignedSlide[];
+  layouts: SlideLayout[];
   outputDir: string;
 }
 
-function applyBackground(
+function drawShape(
   slide: PptxSlide,
-  design: DesignedSlide,
-  theme: ThemeTokens,
-): void {
-  const color =
-    design.backgroundStyle === "dark"
-      ? theme.background.dark
-      : design.backgroundStyle === "accent"
-        ? design.accentColor
-        : theme.background.light;
-
-  slide.background = { color };
-}
-
-function addTitleBlock(
-  slide: PptxSlide,
-  content: SlideContent,
-  design: DesignedSlide,
-  theme: ThemeTokens,
-): void {
-  const titleColor =
-    design.backgroundStyle === "light"
-      ? theme.text.primary
-      : theme.text.inverted;
-
-  slide.addText(content.title, {
-    x: 0.7,
-    y: 0.6,
-    w: 7.5,
-    h: 0.8,
-    fontFace: theme.fontFace.headline,
-    fontSize: design.archetype === "hero_statement" ? 24 : 22,
-    bold: true,
-    color: titleColor,
-    margin: 0,
-    breakLine: false,
-  });
-
-  if (content.subtitle) {
-    slide.addText(content.subtitle, {
-      x: 0.72,
-      y: 1.3,
-      w: 6.6,
-      h: 0.5,
-      fontFace: theme.fontFace.body,
-      fontSize: 10,
-      color: titleColor,
-      margin: 0,
-      opacity: 0.85,
-    });
-  }
-}
-
-function addBulletColumn(
-  slide: PptxSlide,
-  content: SlideContent,
-  design: DesignedSlide,
-  theme: ThemeTokens,
-): void {
-  const bodyColor =
-    design.backgroundStyle === "light"
-      ? theme.text.primary
-      : theme.text.inverted;
-
-  slide.addText(
-    content.bullets.map((bullet) => ({ text: bullet, options: { bullet: { indent: 14 } } })),
-    {
-      x: 0.8,
-      y: 2.0,
-      w: 5.3,
-      h: 3.2,
-      fontFace: theme.fontFace.body,
-      fontSize: 16,
-      color: bodyColor,
-      breakLine: true,
-      paraSpaceAfterPt: 12,
-      valign: "top",
-      margin: 0,
-    },
-  );
-}
-
-function addAccentPanel(
-  slide: PptxSlide,
-  content: SlideContent,
-  design: DesignedSlide,
-  theme: ThemeTokens,
   shapeType: Record<string, string>,
+  element: LayoutElement,
+  design: DesignedSlide,
+  theme: ThemeTokens,
 ): void {
+  const box = { x: element.x, y: element.y, w: element.w, h: element.h };
+
+  if (element.role === "panel") {
+    slide.addShape(shapeType.rect, {
+      ...box,
+      fill: { color: normalizeHex(theme.background.light) },
+      line: { color: normalizeHex(design.accentColor), pt: 1.2 },
+    });
+    return;
+  }
+
+  const color = normalizeHex(ruleColor(design, theme));
   slide.addShape(shapeType.rect, {
-    x: 8.2,
-    y: 0.55,
-    w: 4.4,
-    h: 6.0,
-    fill: { color: theme.background.light, transparency: design.backgroundStyle === "light" ? 0 : 5 },
-    line: { color: design.accentColor, pt: 1.2 },
-    radius: 0.12,
+    ...box,
+    fill: { color },
+    line: { color, pt: 0 },
   });
+}
 
-  const text = content.callout ?? content.speakerNote;
-  slide.addText(text, {
-    x: 8.55,
-    y: 1.1,
-    w: 3.7,
-    h: 1.6,
-    fontFace: theme.fontFace.headline,
-    fontSize: 18,
-    bold: true,
-    color: theme.text.primary,
+function drawText(
+  slide: PptxSlide,
+  element: LayoutElement,
+  content: SlideContent,
+  design: DesignedSlide,
+  theme: ThemeTokens,
+): void {
+  const paragraphs = textFor(element, content);
+  if (paragraphs.length === 0) {
+    return;
+  }
+
+  const base = {
+    x: element.x,
+    y: element.y,
+    w: element.w,
+    h: element.h,
+    fontSize: element.fontPt,
+    color: normalizeHex(textColor(element, design, theme)),
     margin: 0,
-    valign: "middle",
-  });
+    valign: element.type === "metric" ? "middle" : "top",
+  };
 
-  slide.addShape(shapeType.line, {
-    x: 8.55,
-    y: 3.0,
-    w: 2.1,
-    h: 0,
-    line: { color: design.accentColor, pt: 2 },
-  });
+  if (element.role === "bullets") {
+    // Numbers are written into the text: a numbered bullet takes its color from
+    // the viewer, and on a dark slide some viewers draw it black.
+    slide.addText(
+      paragraphs.map((text, index) => ({
+        text: element.numbered ? `${index + 1}.  ${text}` : text,
+        options: element.numbered
+          ? { breakLine: true }
+          : { bullet: { indent: BULLET_SPACING.indentPt }, breakLine: true },
+      })),
+      {
+        ...base,
+        fontFace: theme.fontFace.body,
+        paraSpaceAfterPt: BULLET_SPACING.gapPt,
+      },
+    );
+    return;
+  }
 
-  slide.addText("Pipeline local, rastreavel e orientado a qualidade visual.", {
-    x: 8.55,
-    y: 3.35,
-    w: 3.5,
-    h: 1.8,
-    fontFace: theme.fontFace.body,
-    fontSize: 11,
-    color: theme.text.muted,
-    margin: 0,
+  const isHeadline =
+    element.role === "title" ||
+    element.role === "callout" ||
+    element.type === "metric";
+
+  slide.addText(paragraphs.join("\n"), {
+    ...base,
+    fontFace: isHeadline ? theme.fontFace.headline : theme.fontFace.body,
+    bold: element.bold ?? false,
   });
 }
 
@@ -176,6 +129,7 @@ export async function renderPresentation({
   plan,
   contents,
   designedSlides,
+  layouts,
   outputDir,
 }: RenderOptions): Promise<string> {
   await ensureDir(outputDir);
@@ -183,8 +137,8 @@ export async function renderPresentation({
   const pptx = new PptxGenJS();
   const theme = buildThemeTokens(brief.brandKit.colors, brief.brandKit.fonts);
   pptx.layout = "LAYOUT_WIDE";
-  pptx.author = brief.brandKit.brand_name || "AutomacaoSlides";
-  pptx.company = brief.brandKit.brand_name || "AutomacaoSlides";
+  pptx.author = brief.brandKit.brand_name || "ppxt-compiler";
+  pptx.company = brief.brandKit.brand_name || "ppxt-compiler";
   pptx.subject = brief.goal;
   pptx.title = plan.title;
   pptx.theme = {
@@ -195,12 +149,24 @@ export async function renderPresentation({
 
   contents.forEach((content, index) => {
     const design = designedSlides[index];
+    const layout = layouts[index];
     const slide = pptx.addSlide();
 
-    applyBackground(slide, design, theme);
-    addTitleBlock(slide, content, design, theme);
-    addBulletColumn(slide, content, design, theme);
-    addAccentPanel(slide, content, design, theme, pptx.ShapeType);
+    slide.background = {
+      color: normalizeHex(slideBackground(design, theme)),
+    };
+
+    for (const element of layout.elements) {
+      if (element.type === "shape") {
+        drawShape(slide, pptx.ShapeType, element, design, theme);
+      } else {
+        drawText(slide, element, content, design, theme);
+      }
+    }
+
+    if (content.speakerNote) {
+      slide.addNotes(content.speakerNote);
+    }
   });
 
   const pptxPath = path.join(outputDir, `${brief.projectId}.pptx`);

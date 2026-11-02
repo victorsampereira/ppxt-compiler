@@ -8,6 +8,7 @@ export interface ThemeTokens {
     primary: string;
     inverted: string;
     muted: string;
+    mutedInverted: string;
   };
   accent: string;
   fontFace: {
@@ -30,6 +31,7 @@ export function buildThemeTokens(
       primary: colors[0] ?? "#161616",
       inverted: "#FFFFFF",
       muted: "#5E5A55",
+      mutedInverted: "#D9D4CA",
     },
     accent: colors[2] ?? "#C96F3B",
     fontFace: {
@@ -38,4 +40,3 @@ export function buildThemeTokens(
     },
   };
 }
-

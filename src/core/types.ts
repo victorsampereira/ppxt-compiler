@@ -78,6 +78,8 @@ export interface PlannedSlide {
   slideId: string;
   section: string;
   purpose: SlidePurpose;
+  /** Short label of what the slide is about; optional because models may omit it. */
+  topic?: string;
   keyMessage: string;
   speakerIntent: string;
   recommendedArchetype: SlideArchetype;
@@ -108,14 +110,32 @@ export interface DesignedSlide {
   accentColor: string;
 }
 
+export type LayoutRole =
+  | "title"
+  | "subtitle"
+  | "bullets"
+  | "callout"
+  | "meta"
+  | "panel"
+  | "rule";
+
+/** Positions and sizes are in inches on a 13.333 x 7.5 widescreen slide. */
 export interface LayoutElement {
   id: string;
   type: "text" | "shape" | "metric";
+  role: LayoutRole;
   x: number;
   y: number;
   w: number;
   h: number;
   styleRef: string;
+  fontPt?: number;
+  bold?: boolean;
+  numbered?: boolean;
+  /** "panel" means the element sits on the light card, not on the slide background. */
+  surface?: "slide" | "panel";
+  /** Slice of the slide bullets drawn by this element: [start, end). */
+  bulletRange?: [number, number];
 }
 
 export interface SlideLayout {
@@ -141,6 +161,9 @@ export interface QualityReport {
   generatedAt: string;
   averageScore: number;
   slideResults: SlideQualityResult[];
+  /** Problems that only show up across slides, such as a repeated layout. */
+  deckIssues: QualityIssue[];
+  verdict: "ready" | "needs_work";
 }
 
 export interface PromptTrace {
@@ -148,6 +171,9 @@ export interface PromptTrace {
   version: string;
   model: string;
   usedAi: boolean;
+  /** Why the deterministic fallback was used instead of the model output. */
+  fallbackReason?: "api_error" | "invalid_output";
+  latencyMs?: number;
 }
 
 export interface PipelineArtifacts {

@@ -3,7 +3,10 @@ import path from "node:path";
 import { runPresentationPipeline } from "./pipeline/run-presentation-pipeline.js";
 
 async function main(): Promise<void> {
-  const inputArg = process.argv[2] ?? "data/examples/briefing.sample.json";
+  const args = process.argv.slice(2);
+  const strict = args.includes("--strict");
+  const inputArg =
+    args.find((arg) => !arg.startsWith("--")) ?? "data/examples/briefing.sample.json";
   const inputPath = path.resolve(process.cwd(), inputArg);
 
   const result = await runPresentationPipeline({
@@ -11,9 +14,26 @@ async function main(): Promise<void> {
     outputDir: path.resolve(process.cwd(), "output", "generated"),
   });
 
+  const { qualityReport } = result;
   console.log(`PPTX gerado em: ${result.pptxPath}`);
   console.log(`Manifesto gerado em: ${result.manifestPath}`);
   console.log(`Relatorio de QA gerado em: ${result.qualityReportPath}`);
+  console.log(
+    `Modo: ${result.generationMode} | score medio: ${qualityReport.averageScore}/5 | veredito: ${qualityReport.verdict}`,
+  );
+
+  for (const slide of qualityReport.slideResults) {
+    for (const issue of slide.issues) {
+      console.log(`  ${slide.slideId} [${issue.severity}] ${issue.code}: ${issue.message}`);
+    }
+  }
+  for (const issue of qualityReport.deckIssues) {
+    console.log(`  deck [${issue.severity}] ${issue.code}: ${issue.message}`);
+  }
+
+  if (strict && qualityReport.verdict !== "ready") {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error: unknown) => {
@@ -21,4 +41,3 @@ main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
-

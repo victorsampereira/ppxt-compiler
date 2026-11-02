@@ -1,69 +1,84 @@
+import { LIMITS } from "./limits.js";
 import {
   NormalizedBrief,
+  PlannedSlide,
   PresentationPlan,
   SlideContent,
-  SlidePurpose,
 } from "./types.js";
 
-function buildTitle(purpose: SlidePurpose, keyMessage: string): string {
-  if (purpose === "title") {
-    return keyMessage.replace("deve reforcar o objetivo central: ", "");
-  }
-
-  if (purpose === "closing") {
-    return "Proximo passo recomendado";
-  }
-
-  return keyMessage.split(":")[0];
+/**
+ * Deterministic fallback writer. Its copy is placeholder text built from the
+ * brief; it exists so the layout, render and QA stages can run offline and in
+ * CI. Real slide copy comes from the model (see src/ai/pipeline-ai.ts).
+ */
+function capitalize(text: string): string {
+  const trimmed = text.trim();
+  return trimmed === "" ? trimmed : trimmed[0].toUpperCase() + trimmed.slice(1);
 }
 
-function buildBullets(
-  purpose: SlidePurpose,
-  topic: string,
-  brief: NormalizedBrief,
-): string[] {
-  if (purpose === "title") {
-    return [
-      `Objetivo: ${brief.goal}`,
-      `Publico: ${brief.audience}`,
-      `Tom: ${brief.tone}`,
-    ];
-  }
+function topicOf(slide: PlannedSlide): string {
+  return (
+    slide.topic ?? capitalize(slide.keyMessage.split(":")[0].split(" deve ")[0])
+  );
+}
 
-  if (purpose === "closing") {
-    return [
-      "Construir o MVP local com pipeline rastreavel",
-      "Padronizar layouts e rubrica de qualidade",
-      "Integrar IA primeiro no planejamento e na critica",
-    ];
-  }
+function scriptClauses(script: string): string[] {
+  return script
+    .split(/[,;.]| e /i)
+    .map((clause) => clause.trim())
+    .filter((clause) => clause.length > 3);
+}
 
-  return [
-    `${topic} precisa ser comunicado com clareza imediata`,
-    "O slide deve ter uma hierarquia visual dominante",
-    "A composicao precisa evitar cara de template generico",
-  ];
+function matchClause(topic: string, clauses: string[]): string | undefined {
+  const needle = topic.toLowerCase();
+  return clauses.find((clause) => clause.toLowerCase().includes(needle));
 }
 
 export function writeSlides(
   brief: NormalizedBrief,
   plan: PresentationPlan,
 ): SlideContent[] {
-  return plan.slides.map((slide) => ({
-    slideId: slide.slideId,
-    title: buildTitle(slide.purpose, slide.keyMessage),
-    subtitle:
-      slide.purpose === "title"
-        ? brief.title
-        : slide.section === "body"
-          ? "Estrutura do MVP orientada a qualidade"
-          : undefined,
-    bullets: buildBullets(slide.purpose, slide.keyMessage, brief),
-    callout:
-      slide.purpose === "comparison"
-        ? "Comparar opcoes tecnicas com impacto em qualidade e custo"
-        : undefined,
-    speakerNote: slide.speakerIntent,
-  }));
-}
+  const clauses = scriptClauses(brief.sourceScript);
 
+  return plan.slides.map((slide): SlideContent => {
+    const topic = topicOf(slide);
+
+    if (slide.purpose === "title") {
+      return {
+        slideId: slide.slideId,
+        title: brief.title,
+        subtitle: capitalize(brief.goal),
+        bullets: [
+          `Publico: ${brief.audience}`,
+          `Tom: ${brief.tone}`,
+          `Duracao: ${brief.durationMinutes} min`,
+        ],
+        speakerNote: slide.speakerIntent,
+      };
+    }
+
+    if (slide.purpose === "closing") {
+      return {
+        slideId: slide.slideId,
+        title: capitalize(topic),
+        bullets: brief.contentPriority
+          .slice(0, LIMITS.maxBullets)
+          .map((item) => `Retomar: ${item}`),
+        callout: capitalize(brief.goal),
+        speakerNote: slide.speakerIntent,
+      };
+    }
+
+    const clause = matchClause(topic, clauses);
+    return {
+      slideId: slide.slideId,
+      title: capitalize(topic),
+      bullets: [
+        `Publico: ${brief.audience}`,
+        ...brief.forbiddenPatterns.slice(0, 2).map((item) => `Evitar: ${item}`),
+      ].slice(0, LIMITS.maxBullets),
+      callout: clause ? capitalize(clause) : undefined,
+      speakerNote: slide.speakerIntent,
+    };
+  });
+}

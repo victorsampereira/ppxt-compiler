@@ -1,8 +1,8 @@
+import { LIMITS } from "../core/limits.js";
 import {
   NormalizedBrief,
   PresentationPlan,
   SlideContent,
-  SlideQualityResult,
 } from "../core/types.js";
 
 export interface PromptSpec {
@@ -15,7 +15,7 @@ export interface PromptSpec {
 export function buildPlannerPrompt(brief: NormalizedBrief): PromptSpec {
   return {
     id: "planner.presentation-plan",
-    version: "1.0.0",
+    version: "1.1.0",
     instructions:
       "Voce e o planejador narrativo de uma apresentacao profissional. Gere apenas JSON valido. Nao inclua markdown. Cada slide deve ter exatamente uma mensagem principal.",
     input: JSON.stringify(
@@ -31,6 +31,7 @@ export function buildPlannerPrompt(brief: NormalizedBrief): PromptSpec {
               slideId: "s01",
               section: "opening|body|closing",
               purpose: "title|section|argument|data|comparison|closing",
+              topic: "string (short label of what the slide is about)",
               keyMessage: "string",
               speakerIntent: "string",
               recommendedArchetype:
@@ -85,8 +86,8 @@ export function buildWriterPrompt(
           previousSlide,
           nextSlide,
           constraints: {
-            maxBullets: 4,
-            maxWordsPerBullet: 12,
+            maxBullets: LIMITS.maxBullets,
+            maxWordsPerBullet: LIMITS.maxWordsPerBullet,
           },
         },
       },
@@ -133,19 +134,4 @@ export function buildCriticPrompt(
   };
 }
 
-export function mergeCriticResults(
-  fallback: SlideQualityResult,
-  modelResult: SlideQualityResult | null,
-): SlideQualityResult {
-  if (!modelResult) {
-    return fallback;
-  }
-
-  return {
-    slideId: fallback.slideId,
-    status: modelResult.status,
-    score: modelResult.score,
-    issues: modelResult.issues,
-  };
-}
 

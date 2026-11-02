@@ -1,14 +1,31 @@
-import { DesignedSlide, PresentationPlan } from "./types.js";
+import {
+  DesignedSlide,
+  PresentationPlan,
+  SlideArchetype,
+} from "./types.js";
 
-const FALLBACK_COLORS = ["#1E1E1E", "#C96F3B", "#1F5E5B", "#E9E2D3"];
+const DEFAULT_ACCENT = "#C96F3B";
+
+function backgroundFor(archetype: SlideArchetype): DesignedSlide["backgroundStyle"] {
+  switch (archetype) {
+    case "hero_statement":
+    case "closing_cta":
+      return "dark";
+    case "section_break":
+      return "accent";
+    default:
+      return "light";
+  }
+}
 
 export function resolveDesignPlan(
   plan: PresentationPlan,
   brandColors: string[],
 ): DesignedSlide[] {
-  const palette = brandColors.length > 0 ? brandColors : FALLBACK_COLORS;
+  // Same accent the theme uses (third brand color), so the deck stays cohesive.
+  const accentColor = brandColors[2] ?? DEFAULT_ACCENT;
 
-  return plan.slides.map((slide, index) => ({
+  return plan.slides.map((slide) => ({
     slideId: slide.slideId,
     archetype: slide.recommendedArchetype,
     visualPriority:
@@ -17,13 +34,7 @@ export function resolveDesignPlan(
         : slide.purpose === "title"
           ? "balanced"
           : "text-first",
-    backgroundStyle:
-      slide.purpose === "title"
-        ? "dark"
-        : index % 3 === 0
-          ? "accent"
-          : "light",
-    accentColor: palette[index % palette.length],
+    backgroundStyle: backgroundFor(slide.recommendedArchetype),
+    accentColor,
   }));
 }
-
