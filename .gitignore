@@ -2,4 +2,5 @@ node_modules/
 dist/
 output/generated/
 .env
-
+.DS_Store
+coverage/
