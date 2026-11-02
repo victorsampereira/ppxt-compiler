@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-11-02T04:18:58.665Z",
+  "averageScore": 5,
+  "slideResults": [
+    {
+      "slideId": "s01",
+      "status": "pass",
+      "score": 5,
+      "issues": []
+    },
+    {
+      "slideId": "s02",
+      "status": "pass",
+      "score": 5,
+      "issues": []
+    },
+    {
+      "slideId": "s03",
+      "status": "pass",
+      "score": 5,
+      "issues": []
+    },
+    {
+      "slideId": "s04",
+      "status": "pass",
+      "score": 5,
+      "issues": []
+    },
+    {
+      "slideId": "s05",
+      "status": "pass",
+      "score": 5,
+      "issues": []
+    },
+    {
+      "slideId": "s06",
+      "status": "pass",
+      "score": 5,
+      "issues": []
+    }
+  ],
+  "deckIssues": [],
+  "verdict": "ready"
+}
